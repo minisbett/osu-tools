@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Caching.Memory;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Configuration;
@@ -45,6 +46,12 @@ namespace PerformanceCalculatorGUI
             var apiConfig = new SettingsManager(Storage);
             dependencies.CacheAs(apiConfig);
             dependencies.CacheAs(new APIManager(apiConfig));
+
+            CollectionManager collections = new CollectionManager("collections.json");
+            collections.Load();
+            dependencies.CacheAs(collections);
+
+            dependencies.CacheAs(new MemoryCache(new MemoryCacheOptions()));
 
             Ruleset.Value = new OsuRuleset().RulesetInfo;
 

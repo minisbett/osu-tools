@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
 using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
@@ -65,6 +66,9 @@ namespace PerformanceCalculatorGUI.Screens
 
         [Resolved]
         private RulesetStore rulesets { get; set; }
+
+        [Resolved]
+        private MemoryCache scoreCache { get; set; }
 
         public override bool ShouldShowConfirmationDialogOnSwitch => false;
 
@@ -245,6 +249,7 @@ namespace PerformanceCalculatorGUI.Screens
                 Schedule(() => loadingLayer.Text.Value = $"Calculating {player.Username} top scores...");
 
                 var apiScores = await apiManager.GetJsonFromApi<List<SoloScoreInfo>>($"users/{player.OnlineID}/scores/best?mode={ruleset.Value.ShortName}&limit=100");
+                apiScores.ForEach(x => scoreCache.Set(x.OnlineID, x));
 
                 foreach (var score in apiScores)
                 {

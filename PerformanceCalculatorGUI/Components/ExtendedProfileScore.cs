@@ -90,9 +90,12 @@ namespace PerformanceCalculatorGUI.Components
 
         private OsuSpriteText positionChangeText;
 
-        public ExtendedProfileScore(ExtendedScore score)
+        private bool showRank;
+
+        public ExtendedProfileScore(ExtendedScore score, bool showRank = true)
         {
             Score = score;
+            this.showRank = showRank;
 
             RelativeSizeAxes = Axes.X;
             Height = height;
@@ -101,6 +104,8 @@ namespace PerformanceCalculatorGUI.Components
         [BackgroundDependencyLoader]
         private void load(RulesetStore rulesets)
         {
+            Container rankContainer;
+
             AddInternal(new ExtendedProfileItemContainer
             {
                 OnHoverAction = () =>
@@ -113,7 +118,7 @@ namespace PerformanceCalculatorGUI.Components
                 },
                 Children = new Drawable[]
                 {
-                    new Container
+                    rankContainer = new Container
                     {
                         Name = "Rank difference",
                         RelativeSizeAxes = Axes.Y,
@@ -132,7 +137,7 @@ namespace PerformanceCalculatorGUI.Components
                     {
                         Name = "Score info",
                         RelativeSizeAxes = Axes.Both,
-                        Padding = new MarginPadding { Left = rank_difference_width, Right = performance_width },
+                        Padding = new MarginPadding { Left = showRank ? rank_difference_width : 10, Right = performance_width },
                         Children = new Drawable[]
                         {
                             new FillFlowContainer
@@ -360,6 +365,9 @@ namespace PerformanceCalculatorGUI.Components
                     }
                 }
             });
+
+            if (!showRank)
+                rankContainer.Hide();
 
             Score.PositionChange.BindValueChanged(v => { positionChangeText.Text = $"{v.NewValue:+0;-0;-}"; });
         }
