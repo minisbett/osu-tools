@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using osu.Framework.Bindables;
-using osu.Framework.Logging;
 
 namespace PerformanceCalculatorGUI.Configuration
 {
