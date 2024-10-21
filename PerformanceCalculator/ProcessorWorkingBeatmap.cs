@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Reflection;
 using osu.Framework.Audio.Track;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.IO.Network;
@@ -61,7 +62,7 @@ namespace PerformanceCalculator
             if (!int.TryParse(fileOrId, out var beatmapId))
                 throw new ArgumentException("Could not parse provided beatmap ID.");
 
-            string cachePath = Path.Combine("cache", $"{beatmapId}.osu");
+            string cachePath = Path.Combine(new System.IO.FileInfo(Assembly.GetEntryAssembly().Location).DirectoryName, "cache", $"{beatmapId}.osu");
 
             if (!File.Exists(cachePath))
             {

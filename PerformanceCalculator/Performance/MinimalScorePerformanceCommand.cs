@@ -50,7 +50,7 @@ namespace PerformanceCalculator.Performance
             DifficultyAttributes attributes = ruleset.CreateDifficultyCalculator(workingBeatmap).Calculate(score.Mods);
             PerformanceAttributes performanceAttributes = ruleset.CreatePerformanceCalculator().Calculate(score, attributes);
 
-            Console.WriteLine(attributes.StarRating + " " + performanceAttributes.Total);
+            Console.WriteLine($"{attributes.StarRating} {performanceAttributes.Total} {workingBeatmap.GetPlayableBeatmap(ruleset.RulesetInfo).GetMaxCombo()}");
         }
     }
 }
