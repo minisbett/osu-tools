@@ -13,6 +13,7 @@ using osu.Game.Graphics.Containers;
 using osu.Game.Overlays;
 using osu.Game.Rulesets.Catch.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
+using osu.Game.Rulesets.Mania.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Difficulty.Evaluators;
 using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
@@ -114,6 +115,12 @@ namespace PerformanceCalculatorGUI.Screens.ObjectInspection
                     drawCatchValues(catchDifficultyHitObject);
                     break;
                 }
+
+                case ManiaDifficultyHitObject maniaDifficultyHitObject:
+                {
+                    drawManiaValues(maniaDifficultyHitObject);
+                    break;
+                }
             }
         }
 
@@ -169,6 +176,10 @@ namespace PerformanceCalculatorGUI.Screens.ObjectInspection
                 new ObjectInspectorDifficultyValue("Strain Time", hitObject.StrainTime),
                 new ObjectInspectorDifficultyValue("Normalized Position", hitObject.NormalizedPosition)
             });
+        }
+
+        private void drawManiaValues(ManiaDifficultyHitObject hitObject)
+        {
         }
     }
 }

@@ -16,6 +16,7 @@ using osu.Game.Overlays;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Catch.UI;
 using osu.Game.Rulesets.Difficulty;
+using osu.Game.Rulesets.Mania.UI;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.UI;
 using osu.Game.Rulesets.Taiko.UI;
@@ -193,6 +194,21 @@ namespace PerformanceCalculatorGUI.Screens.ObjectInspection
                     Children = new Drawable[]
                     {
                         new CatchObjectInspectorRuleset(rulesetInstance, playableBeatmap, modifiedMods, difficultyCalculator.Value as ExtendedCatchDifficultyCalculator,
+                            processorBeatmap.Track.Rate)
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Clock = clock,
+                            ProcessCustomClock = false
+                        },
+                    }
+                },
+                "mania" => new ManiaPlayfieldAdjustmentContainer
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Y = 100,
+                    Children = new Drawable[]
+                    {
+                        new ManiaObjectInspectorRuleset(rulesetInstance, playableBeatmap, modifiedMods, difficultyCalculator.Value as ExtendedManiaDifficultyCalculator,
                             processorBeatmap.Track.Rate)
                         {
                             RelativeSizeAxes = Axes.Both,
