@@ -4,12 +4,24 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Linq;
+using System.Threading;
+using Humanizer;
 using JetBrains.Annotations;
 using McMaster.Extensions.CommandLineUtils;
 using osu.Game.Beatmaps;
 using osu.Game.Rulesets;
+using osu.Game.Rulesets.Catch;
+using osu.Game.Rulesets.Catch.Difficulty;
+using osu.Game.Rulesets.Mania;
+using osu.Game.Rulesets.Mania.Difficulty;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Osu;
+using osu.Game.Rulesets.Osu.Difficulty;
 using osu.Game.Rulesets.Scoring;
+using osu.Game.Rulesets.Taiko;
+using osu.Game.Rulesets.Taiko.Difficulty;
 using osu.Game.Scoring;
 
 namespace PerformanceCalculator.Simulate
@@ -83,10 +95,94 @@ namespace PerformanceCalculator.Simulate
 
             var difficultyCalculator = ruleset.CreateDifficultyCalculator(workingBeatmap);
             var difficultyAttributes = difficultyCalculator.Calculate(mods);
+            var timedDifficultyAttributes = difficultyCalculator.CalculateTimed(mods)[beatmap.HitObjects.Count / 2];
             var performanceCalculator = ruleset.CreatePerformanceCalculator();
             var performanceAttributes = performanceCalculator?.Calculate(scoreInfo, difficultyAttributes);
 
-            OutputPerformance(scoreInfo, performanceAttributes, difficultyAttributes);
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            string rulesetName = ruleset.ShortName is "fruits" ? "catch" : ruleset.ShortName;
+
+            Type diffAttribsType = ruleset switch
+            {
+                OsuRuleset _ => typeof(OsuDifficultyAttributes),
+                TaikoRuleset _ => typeof(TaikoDifficultyAttributes),
+                CatchRuleset _ => typeof(CatchDifficultyAttributes),
+                ManiaRuleset _ => typeof(ManiaDifficultyAttributes),
+                _ => throw new InvalidOperationException("Unsupported ruleset.")
+            };
+
+            List<string> diffAttribs = [.. diffAttribsType.GetProperties().Where(x => x.Name is not "Mods").Select(property => $"{property.Name} = {property.GetValue(difficultyAttributes)}")];
+
+            Console.WriteLine(
+                $$"""
+                  yield return new(
+                      "beatmaps/{{rulesetName}}/{{System.IO.Path.GetFileName(Beatmap)}}",
+                      {{(mods.Length is 0 ? "null" : $"\"{string.Join("", mods.Select(x => x.Acronym))}\"")}},
+                      new Native{{rulesetName.Humanize()}}DifficultyAttributes(new()
+                      {
+                          {{string.Join(",\n        ", diffAttribs)}}
+                      })
+                  );
+                  """);
+
+            Console.WriteLine("\n\n");
+
+            List<string> timedDiffAttribs = [.. diffAttribsType.GetProperties().Where(x => x.Name is not "Mods").Select(property => $"{property.Name} = {property.GetValue(timedDifficultyAttributes.Attributes)}")];
+
+            Console.WriteLine(
+                $$"""
+                  yield return new(
+                      "beatmaps/{{rulesetName}}/{{System.IO.Path.GetFileName(Beatmap)}}",
+                      {{(mods.Length is 0 ? "null" : $"\"{string.Join("", mods.Select(x => x.Acronym))}\"")}},
+                      {{beatmap.HitObjects.Count / 2}},
+                      new NativeTimed{{rulesetName.Humanize()}}DifficultyAttributes(new({{timedDifficultyAttributes.Time}}, new {{rulesetName.Humanize()}}DifficultyAttributes
+                      {
+                          {{string.Join(",\n        ", timedDiffAttribs)}}
+                      }))
+                  );
+                  """);
+
+            Console.WriteLine("\n\n");
+
+            Type perfAttribsType = ruleset switch
+            {
+                OsuRuleset _ => typeof(OsuPerformanceAttributes),
+                TaikoRuleset _ => typeof(TaikoPerformanceAttributes),
+                CatchRuleset _ => typeof(CatchPerformanceAttributes),
+                ManiaRuleset _ => typeof(ManiaPerformanceAttributes),
+                _ => throw new InvalidOperationException("Unsupported ruleset.")
+            };
+
+            List<string> perfAttribs = [.. perfAttribsType.GetProperties().Select(property => $"{property.Name} = {property.GetValue(performanceAttributes) ?? "null"}")];
+
+            Console.WriteLine(
+                $$"""
+                  yield return new(
+                      "beatmaps/{{rulesetName}}/{{System.IO.Path.GetFileName(Beatmap)}}",
+                      {{(mods.Length is 0 ? "null" : $"\"{string.Join("", mods.Select(x => x.Acronym))}\"")}},
+                      new NativeScoreInfo
+                      {
+                          MaxCombo = {{scoreInfo.MaxCombo}},
+                          Accuracy = {{scoreInfo.Accuracy}},
+                          LegacyTotalScore = {{scoreInfo.LegacyTotalScore?.ToString() ?? "null"}},
+                          CountMiss = {{scoreInfo.Statistics.GetValueOrDefault(HitResult.Miss)}},
+                          CountMeh = {{scoreInfo.Statistics.GetValueOrDefault(HitResult.Meh)}},
+                          CountOk = {{scoreInfo.Statistics.GetValueOrDefault(HitResult.Ok)}},
+                          CountGood = {{scoreInfo.Statistics.GetValueOrDefault(HitResult.Good)}},
+                          CountGreat = {{scoreInfo.Statistics.GetValueOrDefault(HitResult.Great)}},
+                          CountPerfect = {{scoreInfo.Statistics.GetValueOrDefault(HitResult.Perfect)}},
+                          CountSmallTickMiss = {{scoreInfo.Statistics.GetValueOrDefault(HitResult.SmallTickMiss)}},
+                          CountSmallTickHit = {{scoreInfo.Statistics.GetValueOrDefault(HitResult.SmallTickHit)}},
+                          CountLargeTickMiss = {{scoreInfo.Statistics.GetValueOrDefault(HitResult.LargeTickMiss)}},
+                          CountLargeTickHit = {{scoreInfo.Statistics.GetValueOrDefault(HitResult.LargeTickHit)}},
+                          CountSliderTailHit = {{scoreInfo.Statistics.GetValueOrDefault(HitResult.SliderTailHit)}}
+                      },
+                      new Native{{rulesetName.Humanize()}}PerformanceAttributes(new()
+                      {
+                          {{string.Join(",\n        ", perfAttribs)}}
+                      })
+                  );
+                  """);
         }
 
         protected abstract Dictionary<HitResult, int> GenerateHitResults(IBeatmap beatmap, Mod[] mods);
